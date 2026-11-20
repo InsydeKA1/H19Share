@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H19 FBPT dump</title>
+<!--
+  H19DumpFPDT share page (put on GitHub Pages or any https web server).
+  H19DumpFPDT.exe uploads the .bin, then its QR code opens
+    index.html?u=<download page URL>&n=<file name>&e=<retention text>
+  This page holds no data; it only offers Share (the phone's share sheet:
+  LINE / WeChat / ...), Copy and Open for that link.
+  navigator.share needs https and a tap - that is why this page exists.
+-->
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --text:#1f2328; --muted:#6a737d; --accent:#0e639c; --ok:#13805c; --border:#d0d7de; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111418; --card:#1c2128; --text:#e6edf3; --muted:#9aa4af; --accent:#3794ff; --ok:#3fb950; --border:#30363d; } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--text); font-family:-apple-system,"Segoe UI","Microsoft JhengHei",Arial,sans-serif; }
+  .card { max-width:460px; margin:0 auto; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px 18px; }
+  h1 { font-size:19px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:14px; margin-bottom:16px; }
+  .name { font:15px Consolas,Menlo,monospace; word-break:break-all; margin:4px 0; }
+  .url { font:12.5px Consolas,Menlo,monospace; color:var(--muted); word-break:break-all; margin:6px 0 4px; }
+  button, a.btn { display:block; width:100%; text-align:center; font-size:18px; font-weight:700; padding:15px; border-radius:10px; margin-top:12px; border:1px solid var(--border); background:var(--card); color:var(--text); text-decoration:none; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .msg { min-height:20px; margin-top:12px; font-size:14px; color:var(--ok); text-align:center; }
+  .err { color:#d73a49; }
+  .note { color:var(--muted); font-size:13px; margin-top:16px; line-height:1.55; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <h1>H19 FBPT dump</h1>
+  <div class="sub">把下載連結分享給別人 / Share the download link</div>
+  <div class="name" id="name"></div>
+  <div class="url" id="url"></div>
+  <button class="primary" id="share">分享連結 / Share</button>
+  <button id="copy">複製網址 / Copy link</button>
+  <a class="btn" id="open" href="#">開啟下載頁 / Open</a>
+  <div class="msg" id="msg"></div>
+  <div class="note" id="note"></div>
+</div>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var u = q.get('u') || '', n = q.get('n') || '', e = q.get('e') || '';
+  var $ = function (id) { return document.getElementById(id); };
+  // Only plain https links are accepted (no javascript: or other schemes).
+  if (!/^https:\/\/[^\s"'<>]+$/i.test(u)) {
+    $('card').innerHTML = '<h1>H19 FBPT dump</h1><div class="msg err">網址不正確 / Invalid link</div>';
+    return;
+  }
+  $('name').textContent = n;
+  $('url').textContent = u;
+  $('open').href = u;
+  $('note').textContent = (e ? '檔案 ' + e + '後自動刪除，' : '') + '收到的人打開連結後按「Download」下載。';
+  var msg = function (t, bad) { $('msg').textContent = t; $('msg').className = 'msg' + (bad ? ' err' : ''); };
+  var title = 'H19 FBPT dump' + (n ? ' - ' + n : '');
+  if (!navigator.share) $('share').style.display = 'none';
+  $('share').onclick = function () {
+    navigator.share({ title: title, text: title + (e ? '（' + e + '內有效）' : ''), url: u })
+      .catch(function (err) { if (err && err.name !== 'AbortError') msg('無法分享：' + err.message, true); });
+  };
+  $('copy').onclick = function () {
+    var done = function () { msg('已複製網址 / Copied'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done, fallback);
+    else fallback();
+    function fallback() {
+      var t = document.createElement('textarea'); t.value = u; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); done(); } catch (x) { msg('請手動複製上面的網址', true); }
+      document.body.removeChild(t);
+    }
+  };
+})();
+</script>
+</body>
+</html>
